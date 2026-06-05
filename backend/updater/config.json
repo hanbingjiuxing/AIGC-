@@ -1,0 +1,14 @@
+{
+    "check_interval_hours": 24,
+    "version_check_url": "https://api.github.com/repos/hanbingjiuxing/AIGC-/releases/latest",
+    "download_dir": "./updates",
+    "version_file": "version.json",
+    "max_retries": 3,
+    "retry_delay_seconds": 5,
+    "chunk_size_bytes": 1048576,
+    "timeout_seconds": 30,
+    "auto_install": true,
+    "auto_restart": false,
+    "verify_ssl": true,
+    "github_token": null
+}
