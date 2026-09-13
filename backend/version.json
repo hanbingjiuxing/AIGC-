@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
-  "installed_at": "2026-06-05T23:32:37.491946",
-  "release_notes": "\u53a6\u95e8\u5927\u5b66\u9644\u5c5e\u79d1\u6280\u4e2d\u5b66aigc\u63a2\u7d22\u793e\u4fe1\u606f\u7cfb\u7edf"
+  "version": "2.0.0",
+  "installed_at": "2026-09-13T19:00:00",
+  "release_notes": "重写自动更新系统：git pull 优先 / GitHub Release 回退；用户数据改为按文件夹名称识别保护，并统一到 data/ 目录；启动脚本一键检测更新；修复旧版解压错位与数据覆盖问题"
 }
