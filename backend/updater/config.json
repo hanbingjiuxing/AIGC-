@@ -1,14 +1,77 @@
 {
-    "check_interval_hours": 24,
-    "version_check_url": "https://api.github.com/repos/hanbingjiuxing/AIGC-/releases/latest",
-    "download_dir": "./updates",
-    "version_file": "version.json",
+  "enabled": true,
+  "check_on_startup": true,
+  "startup_delay_seconds": 8,
+  "auto_install": false,
+  "check_interval_hours": 0,
+  "source": "auto",
+
+  "git": {
+    "remote": "origin",
+    "branch": "main",
+    "allow_dirty": false,
+    "ff_only": true,
+    "timeout_seconds": 180
+  },
+
+  "release": {
+    "repo": "hanbingjiuxing/AIGC-",
+    "api_base": "https://api.github.com",
+    "asset_pattern": "\\.zip$",
+    "verify_ssl": true,
+    "timeout_seconds": 60,
     "max_retries": 3,
     "retry_delay_seconds": 5,
-    "chunk_size_bytes": 1048576,
-    "timeout_seconds": 30,
-    "auto_install": true,
-    "auto_restart": false,
-    "verify_ssl": true,
-    "github_token": null
+    "chunk_size_bytes": 1048576
+  },
+
+  "proxy": {
+    "enabled": false,
+    "url": ""
+  },
+
+  "data": {
+    "enabled": true,
+    "paths": [
+      "data"
+    ],
+    "dir_names": {},
+    "auto_discover_databases": true,
+    "database_globs": ["*.db", "*.sqlite", "*.sqlite3", "*.db3"],
+    "snapshot_at_risk_files": true,
+    "protect_tracked_git_paths": true,
+    "verify_after_update": true
+  },
+
+  "install": {
+    "backup_before_update": true,
+    "max_backups": 5,
+    "preserve_dirs": [
+      "data",
+      "backend/instance",
+      "backend/uploads",
+      "frontend/node_modules",
+      "frontend/dist"
+    ],
+    "preserve_files": [
+      "backend/version.json",
+      "backend/updater/config.json",
+      ".env"
+    ],
+    "skip_dirs": [
+      ".git", ".github", "node_modules", "__pycache__",
+      ".venv", "venv", "env", "dist", "build", ".pytest_cache", ".idea", ".vscode"
+    ],
+    "skip_globs": [
+      "*.pyc", "*.pyo", "*.pyd", "*.db", "*.sqlite", "*.sqlite3", "*.log", "*.tmp"
+    ],
+    "allow_extensions": [
+      ".py", ".json", ".md", ".txt", ".html", ".js", ".jsx", ".ts", ".tsx",
+      ".css", ".scss", ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico",
+      ".bat", ".ps1", ".sh", ".yml", ".yaml", ".toml", ".cfg", ".ini",
+      ".pdf", ".cjs", ".mjs", ".map", ".woff", ".woff2", ".ttf"
+    ]
+  },
+
+  "allow_restart": false
 }

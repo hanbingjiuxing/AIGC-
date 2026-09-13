@@ -68,6 +68,15 @@ const ApiService = {
         create: (data) => api.post('/announcements', data),
         update: (id, data) => api.put(`/announcements/${id}`, data),
         delete: (id) => api.delete(`/announcements/${id}`),
+    },
+    update: {
+        // 所有更新接口都需要老师/社长权限
+        status: () => api.get('/update/status'),
+        check: (data) => api.post('/update/check', data || {}),
+        preview: () => api.get('/update/preview'),
+        install: (data) => api.post('/update/install', data || {}),
+        restart: () => api.post('/update/restart'),
+        log: (params) => api.get('/update/log', { params }),
     }
 };
 

@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 统一的数据目录（数据库 / 学生作品 / 更新缓存 / 备份）——升级时唯一需要保留的目录
+data/
+
+# 旧版数据位置（迁移后应为空，保留以防回退）
+backend/instance/
+backend/uploads/
+backend/updates/
+backend/backup/
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+
+# 本地配置与密钥
+.env
+.env.local
+*.local.json
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

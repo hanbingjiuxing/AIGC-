@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import ApiService from '../../services/api';
+import SystemUpdateCard from './SystemUpdateCard';
 
 import { Moon, Sun, Lock, Shield } from 'lucide-react';
 
 const SettingsView = () => {
+    const user = JSON.parse(localStorage.getItem('user_info') || '{}');
+    const isPrivileged = user.role === 'teacher' || user.role === 'president';
+
     // Initialize state from local storage or system preference
     const [darkMode, setDarkMode] = useState(() => {
         return localStorage.getItem('theme') === 'dark' ||
@@ -164,6 +168,8 @@ const SettingsView = () => {
                     </div>
                 </div>
             </div>
+
+            {isPrivileged && <SystemUpdateCard />}
         </div>
     );
 };
