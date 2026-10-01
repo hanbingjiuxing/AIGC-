@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+import copy
+import json
 import subprocess
 import sys
 import tempfile
@@ -76,8 +78,21 @@ for a, b, expected in cases:
     got = version.compare(a, b)
     check(f"compare({a!r}, {b!r}) == {expected}", got == expected, f"得到 {got}")
 
-check("带 BOM 的 version.json 仍能读出 1.1.0", version.local_version_string() == "1.1.0",
+check("本地 version.json 可读，且与磁盘内容一致",
+      version.local_version_string() == str(json.loads(VERSION_FILE.read_text("utf-8"))["version"]),
       f"读到 {version.local_version_string()!r}")
+
+# 真正的 BOM 兼容性测试：临时把 VERSION_FILE 指到一个带 BOM 的文件上
+with tempfile.TemporaryDirectory() as tmp:
+    bom_file = Path(tmp) / "version.json"
+    bom_file.write_bytes(b"\xef\xbb\xbf" + json.dumps({"version": "1.1.0"}).encode("utf-8"))
+    original_version_file = version.VERSION_FILE
+    version.VERSION_FILE = bom_file
+    try:
+        bom_read = version.local_version_string()
+    finally:
+        version.VERSION_FILE = original_version_file
+check("带 BOM 的 version.json 仍能读出 1.1.0", bom_read == "1.1.0", f"读到 {bom_read!r}")
 
 # --- 3. ZIP 包裹目录识别 -------------------------------------------------- #
 print("\n[3] 包裹目录识别（GitHub Download ZIP 形式）")
@@ -130,6 +145,22 @@ check("点文件被视为无扩展名（由文件名白名单放行）",
       installer.effective_extension(".gitignore") == ""
       and installer.classify(".gitignore", cfg)[0] == "write",
       f"ext={installer.effective_extension('.gitignore')!r}")
+
+# 资源保险箱密文：必须能装进去，且不受旧配置白名单影响（回归）
+action, reason = installer.classify("assets/encrypted/tx.web.png.enc", cfg)
+check("保险箱密文可安装", action == "write", f"得到 {action} ({reason})")
+
+legacy_cfg = copy.deepcopy(cfg)
+legacy_cfg.setdefault("install", {})["allow_extensions"] = [
+    e for e in legacy_cfg["install"].get("allow_extensions", []) if e.lower() != ".enc"
+]
+check("旧机器（config.json 白名单里没有 .enc）也能装下密文",
+      installer.classify("assets/encrypted/tx.web.png.enc", legacy_cfg)[0] == "write",
+      f"得到 {installer.classify('assets/encrypted/tx.web.png.enc', legacy_cfg)}")
+
+action, reason = installer.classify("payload/evil.enc", legacy_cfg)
+check("别处的 .enc 仍按白名单拦截（放行只限 assets/encrypted/）",
+      action == "skip", f"得到 {action} ({reason})")
 
 # --- 6. 真实更新包计划（不落盘） ------------------------------------------ #
 print("\n[6] 真实更新包安装计划（dry-run）")

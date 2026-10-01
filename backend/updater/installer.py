@@ -32,6 +32,10 @@ ALLOW_FILENAMES = {
     "dockerfile", "procfile", "readme", "changelog",
 }
 
+#: 资源保险箱目录：里面的密文属于站点数据（不是可执行内容），
+#: 不受 install.allow_extensions 限制 —— 详见 classify()
+VAULT_CIPHER_DIR = "assets/encrypted"
+
 CHUNK = 1024 * 1024
 
 
@@ -200,6 +204,13 @@ def classify(rel: str, cfg: Dict[str, Any]) -> Tuple[str, str]:
         keep_norm = keep_dir.replace("\\", "/").strip("/")
         if rel == keep_norm or rel.startswith(keep_norm + "/"):
             return "preserve", f"受保护目录 {keep_dir}"
+
+    # 资源保险箱的密文无条件放行。原因：backend/updater/config.json 是受保护文件
+    # （更新永远不覆盖它），旧机器上的 allow_extensions 里没有 ".enc"，
+    # 从 Release 包升级时密文会被整批跳过 —— 结果就是 About 页头像退回社徽。
+    # 只放行这一个目录下的密文，别处的 .enc 仍然按白名单处理。
+    if rel == VAULT_CIPHER_DIR or rel.startswith(VAULT_CIPHER_DIR + "/"):
+        return "write", "资源保险箱密文"
 
     ext = effective_extension(rel)
     allowed = {e.lower() for e in (install_cfg.get("allow_extensions") or [])}
