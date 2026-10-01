@@ -8,8 +8,11 @@
     1. python scripts/asset_vault.py encrypt <明文> --out assets/encrypted/<名字>.enc
     2. 在 SITE_ASSETS 里加一条即可
 
-密钥缺失（例如换了一台机器部署、没把 data/secrets/asset-vault.key 带过来）时
-返回 404 而不是 500，前端 <img onError> 会退回到社徽，不会出现裂图。
+密钥材料默认内置在程序里（见 utils/asset_vault.py 的 EMBEDDED_KEY_HEX），
+换机器、从 GitHub 拉取更新之后都能直接显示头像；如果放了
+data/secrets/asset-vault.key，则优先用那一把（想提高防护等级就用它）。
+万一密文或密钥对不上，接口返回 404 而不是 500，
+前端 <img onError> 会退回到社徽，不会出现裂图。
 """
 
 from io import BytesIO

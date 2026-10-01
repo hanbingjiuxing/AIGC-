@@ -158,11 +158,13 @@ const About = () => {
                 src="/api/assets/avatar"
                 alt="古希腊掌管 AIGC 社信息系统的神"
                 onError={(e) => {
-                  // 保险箱/密钥不在、或后端没重启时退回社徽，避免裂图
+                  // 保险箱/密文不在、或后端没重启时退回社徽，避免裂图
                   if (!e.currentTarget.src.endsWith('/logo.png')) {
                     console.warn(
                       '[About] /api/assets/avatar 取不到，已退回社徽。请检查：' +
-                      '① 后端是否用新代码重启过；② data/secrets/asset-vault.key 是否存在。'
+                      '① 后端是否用新代码重启过；' +
+                      '② assets/encrypted/tx.web.png.enc 是否还在；' +
+                      '③ 若换过自己的密钥（data/secrets/asset-vault.key），密文是否已用新密钥重新加密。'
                     );
                     e.currentTarget.src = '/logo.png';
                   }

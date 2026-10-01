@@ -9,9 +9,14 @@
 frontend/public/tx.png 的压缩版，而放在项目根目录的母版会被 git 直接跟踪，
 仓库一旦公开就等于把原图一起发出去。
 
-本脚本把母版加密成密文归档到 assets/encrypted/，仓库里只留下无法还原的字节；
-密钥保存在 data/secrets/（已被 .gitignore 忽略、升级时被更新器整体保护），
-因此密文可以随仓库分发，而内容只对持有密钥的人可见。
+本脚本把母版加密成密文归档到 assets/encrypted/，仓库里只留下无法还原的字节 ——
+防的是"有人直接翻项目文件夹就看到图片"，挡的是没有计算机知识的普通用户。
+密钥材料默认内置在程序里（EMBEDDED_KEY_HEX），因此换机器、从 GitHub 拉更新之后
+都不必再手工拷一次密钥，开箱即用；想提高防护等级，就用 keygen 生成密钥文件放到
+data/secrets/（存在时优先用它，内置密钥随即失效）。
+
+防护等级说清楚：密钥随程序分发 = 防君子不防小人。能看到源码或仓库的人
+（包括公开仓库的任何访问者）依然能解出明文。详见 assets/README.md。
 
 加密设计
 --------
@@ -19,8 +24,10 @@ frontend/public/tx.png 的压缩版，而放在项目根目录的母版会被 gi
   不会解出"看起来正常"的坏文件。
 * 容器：8 字节 magic + 4 字节头部长度 + 头部 JSON + 密文。
   整段头部（magic/length/JSON）作为 AAD 参与认证，改动同样会被检出。
-* 密钥派生：scrypt（N=32768, r=8, p=1, dklen=32）。密钥材料二选一：
+* 密钥派生：scrypt（N=32768, r=8, p=1, dklen=32）。密钥材料按优先级取：
     - 密钥文件：32 字节随机数的十六进制文本，默认 data/secrets/asset-vault.key
+      （存在时优先用它 —— 这就是"提高防护等级"的开关）
+    - 内置密钥：程序里的 EMBEDDED_KEY_HEX，随仓库分发，开箱即用
     - 口令：--passphrase 交互输入，不落盘、不进命令历史，便于换机器还原
 * 明文摘要：sha256 记录在文件头，解密后再校验一次。
 
@@ -153,6 +160,42 @@ def load_key_file(path: Path) -> bytes:
     return decode_key_material(path.read_bytes(), str(path))
 
 
+#: 内置密钥（十六进制）：随程序一起分发，任何一台机器都能直接解出站点资源。
+#:
+#: 为什么要有它：站点图片以密文入库，防的是"有人直接翻项目文件夹就看到图片"，
+#: 挡的是没有计算机知识的普通用户，不是有心破解的人。密钥随程序走，就不必在
+#: 换机器、从 GitHub 拉取更新之后再手工拷一次密钥（以前漏拷 → 头像退回社徽）。
+#:
+#: 想提高防护等级：把 data/secrets/asset-vault.key 放回去（存在时优先用它），
+#: 并用新的密钥重新加密 assets/encrypted/ 下的文件。当前这把内置密钥与仓库里
+#: assets/encrypted/*.enc 的密文配套，改了它旧密文就解不开了。
+EMBEDDED_KEY_HEX = "01a23dcd4fbf8b8a20aca3ebe0b5ae2420e558b02a9b64205650d7057d5f22de"
+
+
+def embedded_key() -> Optional[bytes]:
+    """内置密钥的字节形式；没有配置内置密钥时返回 None。"""
+    text = (EMBEDDED_KEY_HEX or "").strip()
+    if not text:
+        return None
+    return decode_key_material(text.encode("ascii"), "内置密钥 EMBEDDED_KEY_HEX")
+
+
+def candidate_keys(key_file: Path) -> list:
+    """按优先级列出可用密钥：密钥文件（想提高强度就用它）→ 内置密钥。"""
+    candidates = []
+    if key_file and Path(key_file).is_file():
+        candidates.append((f"密钥文件 {key_file}", load_key_file(Path(key_file))))
+    built_in = embedded_key()
+    if built_in is not None:
+        candidates.append(("内置密钥（随程序分发）", built_in))
+    if not candidates:
+        raise VaultError(
+            f"找不到可用密钥：{key_file} 不存在，程序里也没有内置密钥。\n"
+            f"先执行：python scripts/asset_vault.py keygen"
+        )
+    return candidates
+
+
 def create_key_file(path: Path, force: bool = False) -> bytes:
     if path.exists() and not force:
         raise VaultError(f"密钥文件已存在，未覆盖：{path}\n（确实要重建请加 --force，旧密文将再也无法解密）")
@@ -245,21 +288,32 @@ def read_container(path: Path) -> Tuple[bytes, dict, bytes]:
 
 
 def unlock(header: dict, key_file: Path, use_passphrase: bool) -> bytes:
-    mode = header.get("key_mode")
-    if mode == "passphrase" or use_passphrase:
-        material = read_passphrase(confirm=False)
-    else:
-        material = load_key_file(key_file)
     kdf = header.get("kdf") or {}
     salt = b64d(kdf["salt"])
-    key = derive_key(material, salt)
     check = header.get("key_check")
-    if check and key_check(key) != check:
-        raise VaultError(
-            "密钥不符：这把密钥/口令解不开该密文。\n"
-            f"（密文要求的密钥校验值 {check}，当前密钥为 {key_check(key)}）"
-        )
-    return key
+
+    if header.get("key_mode") == "passphrase" or use_passphrase:
+        key = derive_key(read_passphrase(confirm=False), salt)
+        if check and key_check(key) != check:
+            raise VaultError(
+                "口令不符：这个口令解不开该密文。\n"
+                f"（密文要求的密钥校验值 {check}，当前口令为 {key_check(key)}）"
+            )
+        return key
+
+    # 依次试：密钥文件（若在）→ 内置密钥。密文只认它自己那把钥匙，
+    # 所以多试几个候选不会解错，只会更快找到对的那把。
+    tried = []
+    for origin, material in candidate_keys(key_file):
+        key = derive_key(material, salt)
+        if not check or key_check(key) == check:
+            return key
+        tried.append(f"{origin} → {key_check(key)}")
+    raise VaultError(
+        "密钥不符：现有的密钥都解不开该密文。\n"
+        f"（密文要求 {check}；已尝试：{'；'.join(tried)}）\n"
+        "如果确实换过密钥，请用新密钥重新加密 assets/encrypted/ 下的文件。"
+    )
 
 
 def decrypt_plaintext(vault: Path, key_file: Path, use_passphrase: bool) -> Tuple[bytes, dict]:

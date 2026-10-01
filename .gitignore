@@ -35,8 +35,8 @@ build/
 data/secrets/
 *.vault-key
 
-# GraphFlow 插件的本地产物（知识图谱与观测缓存，不属于系统本身）
-.graphflow/
+# GraphFlow 插件的本地产物（知识图谱、观测缓存、本地缓存，不属于系统本身）
+.graphflow*/
 graphflow-out/
 
 # 编辑器 / 系统
