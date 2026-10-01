@@ -3,6 +3,12 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 rem ============================================================
 rem  AIGC Society Information System - Environment Setup
+rem  *** BACKUP COPY of setup_env.bat ***
+rem  Use this one if the main script is missing or has been
+rem  deleted. It is identical in behaviour, and it locates the
+rem  project itself, so it also works when started from another
+rem  folder. To restore the main script, copy this file to
+rem  setup_env.bat.
 rem
 rem  Nothing has to be prepared in advance:
 rem    Python  : reused when already present, otherwise installed

@@ -21,7 +21,8 @@ AIGC社信息系统/
 │   │   ├── works.py            # 作品管理API
 │   │   ├── attendance.py       # 考勤管理API
 │   │   ├── announcements.py    # 公告管理API
-│   │   └── update.py           # 更新相关API
+│   │   ├── update.py           # 更新相关API
+│   │   └── assets.py           # 站点资源API（按需解密，明文不落盘）
 │   ├── services/               # 业务逻辑层
 │   │   ├── __init__.py
 │   │   ├── user_service.py     # 用户业务逻辑
@@ -47,6 +48,14 @@ AIGC社信息系统/
 │   ├── uploads/                #   学生作品与上传文件
 │   ├── updates/                #   更新包下载缓存
 │   └── backups/                #   更新前备份（含用户数据快照）
+├── assets/                     # 资源保险箱：不宜明文入库的源文件密文归档
+│   ├── README.md               #   说明、密钥位置与还原步骤
+│   └── encrypted/              #   密文（AES-256-GCM）
+│       ├── tx.web.png.enc      #     网页版头像，/api/assets/avatar 运行期解密返回
+│       └── tx.png.enc          #     母版原图（仅归档）
+├── fallback/                   # 离线应急页（系统起不来时用）
+│   ├── README.md               #   这一页是什么、怎么重新生成
+│   └── about.html              #   单文件「关于这个系统」，无需框架/服务器，双击可开
 ├── frontend/                   # 前端代码（React + Vite）
 │   ├── public/                 # 静态资源
 │   ├── src/                    # 源代码
@@ -75,6 +84,7 @@ AIGC社信息系统/
 │   ├── admin_gui.py            # 管理员图形界面
 │   ├── admin_tool.py           # 管理员工具
 │   ├── debug_*.py              # 调试脚本
+│   ├── build_about_fallback.py # 生成离线版「关于这个系统」页（fallback/about.html）
 │   └── generate_ssh_key.ps1    # SSH密钥生成脚本
 └── README.md                   # 项目说明（待创建）
 ```
@@ -134,7 +144,9 @@ AIGC社信息系统/
 | `update_db_v2.py` | 数据库版本升级脚本 |
 | `admin_gui.py` | 管理员图形界面工具 |
 | `admin_tool.py` | 管理员命令行工具 |
+| `asset_vault.py` | 资源保险箱命令行入口（实现见 `backend/utils/asset_vault.py`） |
 | `debug_*.py` | 调试脚本 |
+| `build_about_fallback.py` | 把系统内的「关于这个系统」页复制成单文件离线页 `fallback/about.html`（`--check` 只校验是否最新） |
 
 ## 技术栈
 

@@ -4,6 +4,13 @@ setlocal EnableExtensions
 
 rem ============================================================
 rem  AIGC Society System - Launcher
+rem  *** BACKUP COPY of run_system.bat ***
+rem  Use this one if the main script is missing or has been
+rem  deleted. It is identical in behaviour, and it locates the
+rem  project itself, so it also works when started from another
+rem  folder. To restore the main script, copy this file to
+rem  run_system.bat.
+rem
 rem    --updated      internal: used when relaunching after an update
 rem    --skip-update  skip the update check
 rem

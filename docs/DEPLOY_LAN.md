@@ -9,6 +9,10 @@
 你需要知道你电脑的**局域网 IP 地址**。
 - **Windows**: 打开 CMD 输入 `ipconfig`，查找 IPv4 地址 (例如 `192.168.1.5`)。
 
+> **换一台机器部署时，别忘了密钥**：把原机器上的 `data/secrets/asset-vault.key` 一起拷过来，放到新机器同样的位置。
+> 没有它，About 页头像（密文存在 `assets/encrypted/`）解不出来，会自动退回到社徽 `logo.png`，**其余功能不受影响**。
+> 详见 [assets/README.md](../assets/README.md)。
+
 ## 2. 启动后端 (Backend)
 
 后端需要监听所有网络接口 (`0.0.0.0`)，而不仅仅是本地回环。

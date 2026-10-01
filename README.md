@@ -21,9 +21,16 @@
 
 ### 环境要求
 
-- Python 3.10+
-- Node.js 18+
-- npm 8+
+**无需预先安装任何开发环境。** 全新装好的 Windows 直接运行 `setup_env.bat`
+即可，脚本会自己获取缺失的运行时：
+
+- **Python 3.10+** — 本机已有则直接复用；没有则自动安装（优先 `winget`，
+  其次从 python.org 下载官方安装包，按当前用户静默安装，不需要管理员权限）
+- **Node.js 18+ / npm** — 同上自动安装；无法安装时改从 nodejs.org 下载官方
+  便携版 zip，解压到 `runtime\node` 使用
+
+> 完全离线的机器：先把一份已装好依赖的便携版 Python 放进 `runtime\python`，
+> 脚本会优先使用它，全程不联网。
 
 ### 一键部署环境
 
@@ -34,10 +41,12 @@ setup_env.bat
 ```
 
 该脚本会自动：
-1. 检查并安装 Python 依赖
-2. 创建虚拟环境
-3. 安装后端依赖
+1. 检测并准备 Python（缺失则自动获取）
+2. 在 `backend\venv` 创建虚拟环境并安装后端依赖
+3. 检测并准备 Node.js / npm（缺失则自动获取）
 4. 安装前端依赖
+
+可以重复运行，已经就绪的部分会自动跳过。
 
 ### 一键启动系统
 
@@ -57,6 +66,48 @@ run_system.bat
 
 > 想跳过更新检测，可以运行 `run_system.bat --skip-update`。
 > 没有放更新包时这一步会自动跳过，不会打扰你。
+
+脚本启动后端与前端时会自动使用 `setup_env.bat` 准备好的运行时（依次查找
+`backend\venv` → `runtime\` → 系统安装的解释器），因此不需要事先配置 PATH。
+
+### 启动失败：离线版「关于这个系统」
+
+启动脚本会等两个端口（5000 / 5173）真正就绪之后再打开浏览器。要是最后没起来
+（没装 Python、后端依赖缺失、找不到 npm、端口一直没人监听……），它不会把你丢在
+一个打不开的页面上，而是**自动打开离线版的「关于这个系统」页面**：
+
+```
+fallback\about.html
+```
+
+这一页是从系统内的 About 页复制出来的单文件 HTML：没有 React、没有后端、没有
+任何外部请求，双击就能打开 —— 里面写着「遇到实在解决不了的 bug」该找谁。
+内容与样式由 `scripts/build_about_fallback.py` 从 `frontend/src/pages/About.jsx`
+和 `frontend/src/index.css` 生成（生成时逐句核对文案），改完 About 页记得重新跑一次：
+
+```bash
+python scripts/build_about_fallback.py          # 重新生成离线页
+python scripts/build_about_fallback.py --check  # 只检查是否最新
+```
+
+详见 [fallback/README.md](fallback/README.md)。
+
+### 脚本备份
+
+`backup\` 文件夹里放着两份行为一致的备用脚本，供主脚本被删除时使用：
+
+- `backup\run_system_backup.bat` — `run_system.bat` 的备份
+- `backup\setup_env_backup.bat` — `setup_env.bat` 的备份
+
+两份备份都会自行定位项目目录，放在别处也能运行（脚本会先看自己旁边有没有
+`backend\`，没有就再往上一级找）。需要恢复主脚本时，复制回根目录的原名即可：
+
+```bash
+copy backup\setup_env_backup.bat setup_env.bat
+copy backup\run_system_backup.bat run_system.bat
+```
+
+> 主脚本改动后请同步更新这两份备份，保持行为一致。
 
 ### 手动启动
 
@@ -105,8 +156,12 @@ AIGC社信息系统/
 ├── backend/        # 后端代码（Flask）
 ├── frontend/       # 前端代码（React + Vite）
 ├── data/           # 统一数据目录（数据库 / 学生作品 / 缓存 / 备份）
+├── assets/         # 资源保险箱（加密归档的源文件母版）
 ├── docs/           # 项目文档
 ├── scripts/        # 辅助脚本
+├── runtime/        # 自动获取的运行时（便携 Python / Node.js）
+├── backup/         # 备用脚本（主脚本被删时使用）
+├── fallback/       # 离线应急页（启动失败时自动打开的「关于这个系统」）
 ├── setup_env.bat   # 一键部署环境脚本
 ├── run_system.bat  # 一键启动系统脚本
 ├── admin_gui.py    # 数据库管理工具（GUI）
@@ -120,9 +175,12 @@ AIGC社信息系统/
 | `backend/` | Flask后端代码，包含API路由、业务逻辑、数据库模型 |
 | `data/` | **统一数据目录**，含数据库、学生作品、更新缓存与备份。升级时只需保留此目录 |
 | `frontend/` | React前端代码，包含页面组件、API服务封装 |
+| `assets/` | 资源保险箱：站点图片等以密文归档，运行期由后端解密到内存、明文不落盘（见 `assets/README.md`） |
 | `docs/` | 项目文档，包含系统说明书、部署指南、操作手册 |
 | `scripts/` | 辅助脚本，包含数据库脚本、调试脚本等 |
-
+| `runtime/` | 由 `setup_env.bat` 自动管理的运行时目录：`runtime\node` 为自动下载的便携 Node.js，`runtime\python` 可手动放入便携 Python 供离线使用。机器本地文件，不入版本库 |
+| `backup/` | 备用脚本：`run_system_backup.bat` 与 `setup_env_backup.bat`，主脚本被删除时可直接双击使用。改动主脚本后请同步更新 |
+| `fallback/` | 离线应急页：系统起不来时由 `run_system.bat` 自动打开的「关于这个系统」单文件 HTML，不需要框架与服务器。改完系统内 About 页后用 `scripts/build_about_fallback.py` 重新生成 |
 ## 更新说明
 
 系统内置自动更新模块。以老师或社长账号登录后，在「系统设置 → 系统更新」中检查并安装：

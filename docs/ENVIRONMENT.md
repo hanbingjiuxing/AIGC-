@@ -8,6 +8,11 @@
 | **Python** | 3.10+ | 3.12+ |
 | **npm** | 9.x | 10.x+ |
 
+> 这些运行时不需手动准备：`setup_env.bat` 会自动检测并获取缺失的部分——
+> Python 优先用 `winget`，其次下载 python.org 官方安装包（按当前用户静默安装，
+> 无需管理员权限）；Node.js 优先用 `winget`，其次解压官方便携 zip 到
+> `runtime\node`。完全离线的机器，可先把便携 Python 放进 `runtime\python`。
+
 ---
 
 ## 后端依赖 (Python)
@@ -59,6 +64,17 @@ npm install
 ---
 
 ## 快速安装
+
+一键完成（推荐，无需事先安装 Python / Node.js）：
+
+```bash
+setup_env.bat
+```
+
+脚本会自动准备运行时、创建 `backend\venv` 并安装全部依赖；可以重复运行，
+已经就绪的部分会被跳过。
+
+手动安装（供参考）：
 
 ```bash
 # 1. 安装后端依赖
@@ -124,6 +140,12 @@ AIGC社信息系统/
 │   ├── src/                # 源代码
 │   ├── package.json        # Node 依赖
 │   └── vite.config.js      # Vite 配置
-├── run_system.bat          # 一键启动脚本
-└── DEPLOY_LAN.md           # 局域网部署指南
+├── runtime/                 # 自动获取的运行时（便携 Node.js / Python）
+├── backup/                  # 备用脚本（主脚本被删时使用）
+│   ├── setup_env_backup.bat    # 备用环境脚本
+│   └── run_system_backup.bat   # 备用启动脚本
+├── fallback/                # 离线应急页（启动失败时自动打开的「关于这个系统」）
+├── setup_env.bat            # 一键部署环境脚本
+├── run_system.bat           # 一键启动脚本
+└── DEPLOY_LAN.md            # 局域网部署指南
 ```

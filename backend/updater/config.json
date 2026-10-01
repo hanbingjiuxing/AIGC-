@@ -69,7 +69,8 @@
       ".py", ".json", ".md", ".txt", ".html", ".js", ".jsx", ".ts", ".tsx",
       ".css", ".scss", ".svg", ".png", ".jpg", ".jpeg", ".gif", ".ico",
       ".bat", ".ps1", ".sh", ".yml", ".yaml", ".toml", ".cfg", ".ini",
-      ".pdf", ".cjs", ".mjs", ".map", ".woff", ".woff2", ".ttf"
+      ".pdf", ".cjs", ".mjs", ".map", ".woff", ".woff2", ".ttf",
+      ".enc"
     ]
   },
 

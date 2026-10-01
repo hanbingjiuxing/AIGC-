@@ -80,6 +80,7 @@ def create_app():
     from routes.attendance import attendance_bp
     from routes.announcements import announcements_bp
     from routes.update import update_bp
+    from routes.assets import assets_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(members_bp)
@@ -87,6 +88,7 @@ def create_app():
     app.register_blueprint(attendance_bp)
     app.register_blueprint(announcements_bp)
     app.register_blueprint(update_bp)
+    app.register_blueprint(assets_bp)
 
     # Create tables
     with app.app_context():

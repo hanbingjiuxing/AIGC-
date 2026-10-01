@@ -126,6 +126,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   flex-shrink: 0;
+  /* 开屏动画落地时由透明淡入，与飞过来的徽标交叉叠化 */
+  transition: opacity 0.28s ease;
 }
 
 .nav-logo {
@@ -521,4 +523,427 @@ body {
 
 .animate-fade-out {
   animation: fadeOut 0.2s ease-out forwards;
+}
+
+/* ============================================================
+   开屏动画 (SplashScreen)
+   ============================================================ */
+
+/* 开屏期间先藏住导航栏里的真 logo：由开屏元素飞过去，落地后再淡入交接 */
+.splash-active .nav-logo-wrapper {
+  opacity: 0;
+}
+
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 90% at 50% 38%, rgba(99, 102, 241, 0.13), transparent 62%),
+    var(--bg-color);
+  transition: opacity 0.3s ease;
+}
+
+.splash-leave {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+
+/* 外层只负责"登场"：动画结束后保持 scale(1)，不会干扰内层的飞行 transform */
+.splash-logo-in {
+  animation: splashLogoIn 0.62s cubic-bezier(0.22, 1.15, 0.36, 1) both;
+  filter: drop-shadow(0 14px 34px rgba(99, 102, 241, 0.3));
+}
+
+@keyframes splashLogoIn {
+  from {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 与 .nav-logo-wrapper 完全相同的方形裁剪框，只是尺寸更大 */
+.splash-logo-box {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  /* 缩放锚定左上角，落点才能精确对齐导航栏 */
+  transform-origin: top left;
+  will-change: transform;
+}
+
+.splash-logo-img {
+  /* 高度由组件内联给定（与 .nav-logo 用固定像素高度是同一套做法） */
+  width: auto;
+  max-width: none;
+}
+
+.splash-caption {
+  text-align: center;
+  animation: splashCaptionIn 0.7s 0.22s ease-out both;
+}
+
+@keyframes splashCaptionIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.splash-title {
+  font-size: 1.9rem;
+  line-height: 1.2;
+}
+
+.splash-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 0.4rem;
+  letter-spacing: 0.02em;
+}
+
+/* 起飞时说明文字先退场
+   （animation:none 是为了解除登场动画 fill 对 opacity 的占用） */
+.splash-fly .splash-caption,
+.splash-leave .splash-caption {
+  animation: none;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ============================================================
+   关于这个系统 (/about)
+
+   整页自适应：宽度撑满视口，徽标 / 字号 / 留白全部用 clamp() 跟着视口缩放，
+   内容卡片吃掉「头部 + 首屏文案」之外的剩余高度 ——
+   所以窗口多大都刚好铺满：既不留大片空白，也不会在小窗口里溢出。
+   ============================================================ */
+
+.about-page {
+  /* App 的最外层是 flex 居中容器（原本是给登录卡片用的）。
+     作为行向 flex 的 item，不写 width 就会被压成「内容宽度」——
+     实测不管窗口多宽都只有 352px。这一行是整页自适应的前提。 */
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;   /* 移动端地址栏收起/展开时更准 */
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-color);
+  color: var(--text-primary);
+}
+
+.about-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  height: clamp(52px, 4.4vw, 68px);
+  padding: 0 clamp(14px, 2.2vw, 32px);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+}
+
+.about-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* 用 em 而不是 px：内边距自动跟着下面的字号一起缩放 */
+  padding: 0.62em 1.1em 0.62em 0.83em;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: clamp(0.82rem, 0.76rem + 0.22vw, 0.95rem);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.about-back:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  transform: translateX(-2px);
+}
+
+.about-body {
+  flex: 1;                 /* 吃掉 header 之外的全部高度 */
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(22px, 3.2vw, 56px) clamp(16px, 3vw, 44px) clamp(24px, 3.2vw, 56px);
+  display: flex;           /* 让内容卡片能撑满剩余高度 */
+  flex-direction: column;
+  gap: clamp(18px, 2.4vw, 36px);
+}
+
+.about-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(8px, 1.1vw, 16px);
+  animation: fadeIn 0.5s ease-out both;
+}
+
+/* 与导航栏同一套方形裁剪：只取左侧圆形校徽。
+   容器和图片共用 --emblem-size，尺寸一变裁剪比例仍恒定（永远只露左侧圆形徽标）。 */
+.about-emblem {
+  --emblem-size: clamp(64px, 6vw, 104px);
+  width: var(--emblem-size);
+  height: var(--emblem-size);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: clamp(14px, 1.5vw, 24px);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  box-shadow: 0 12px 28px -14px rgba(99, 102, 241, 0.5);
+}
+
+.about-emblem img {
+  height: var(--emblem-size);
+  width: auto;
+  max-width: none;
+}
+
+.about-title {
+  font-size: clamp(1.4rem, 1.05rem + 1.15vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.about-subtitle {
+  color: var(--text-secondary);
+  font-size: clamp(0.84rem, 0.79rem + 0.26vw, 1.05rem);
+  line-height: 1.5;
+}
+
+.about-content {
+  flex: 1;                 /* 内容不多时也把页面撑满一屏 */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 3.4vw, 48px);
+  animation: fadeIn 0.5s 0.08s ease-out both;
+}
+
+/* --- 板块 --- */
+.about-section {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.1vw, 16px);
+}
+
+.about-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(1.05rem, 0.94rem + 0.5vw, 1.38rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* 标题左侧的小色条 */
+.about-section-title::before {
+  content: '';
+  width: 4px;
+  height: 1.05em;
+  border-radius: 2px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+}
+
+.about-subheading {
+  margin-top: clamp(4px, 0.6vw, 10px);
+  font-size: clamp(0.95rem, 0.89rem + 0.28vw, 1.08rem);
+  font-weight: 700;
+}
+
+.about-text {
+  color: var(--text-secondary);
+  font-size: clamp(0.88rem, 0.84rem + 0.2vw, 1rem);
+  line-height: 1.85;
+}
+
+.about-text strong,
+.about-list strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.about-text code,
+.about-list code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  padding: 0.1em 0.42em;
+  border-radius: 5px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.about-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.7vw, 10px);
+  padding-left: 1.25em;
+  color: var(--text-secondary);
+  font-size: clamp(0.88rem, 0.84rem + 0.2vw, 1rem);
+  line-height: 1.8;
+}
+
+.about-list li::marker {
+  color: var(--primary-color);
+}
+
+/* --- 协议表 --- */
+.about-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: clamp(10px, 1vw, 16px);
+  background: var(--bg-card);
+}
+
+.about-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(0.82rem, 0.79rem + 0.16vw, 0.94rem);
+}
+
+.about-table th,
+.about-table td {
+  padding: clamp(8px, 0.9vw, 13px) clamp(12px, 1.3vw, 20px);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.about-table th {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.about-table td {
+  color: var(--text-secondary);
+}
+
+.about-table td:first-child {
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.about-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* --- 联系方式：左边竖排三行，右边头像 ---
+   两者共用同一个 --contact-h，所以头像高度永远等于左边那一列的高度；
+   头像只定 height、width 保持 auto，宽度由原图比例算出来，不会被拉变形。 */
+.contact-row {
+  --contact-h: clamp(104px, 8.5vw, 132px);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(14px, 1.8vw, 26px);
+  width: fit-content;
+  max-width: 100%;
+  margin-top: clamp(4px, 0.6vw, 10px);
+}
+
+.contact-list {
+  height: var(--contact-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;   /* 三行铺满整段高度，首尾与头像齐平 */
+  gap: clamp(6px, 0.8vw, 10px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.contact-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: clamp(0.88rem, 0.84rem + 0.2vw, 1rem);
+}
+
+.contact-label {
+  flex-shrink: 0;
+  min-width: 3.1em;
+  color: var(--text-secondary);
+  font-size: 0.85em;
+}
+
+.contact-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.contact-avatar {
+  display: block;
+  flex: 0 0 auto;
+  height: var(--contact-h);   /* 与左边那一列等高 */
+  width: auto;                /* 宽度按原图比例自动算，不拉伸 */
+  border-radius: clamp(8px, 0.9vw, 14px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 12px 28px -18px rgba(99, 102, 241, 0.65);
+}
+
+/* 窄窗口（手机 / 分屏）：收紧留白，别让间距本身占满一屏 */
+@media (max-width: 640px) {
+  .about-body {
+    gap: 16px;
+  }
+
+  /* 窄屏下表格不再强撑单行，免得横向滚动 */
+  .about-table th,
+  .about-table td:first-child {
+    white-space: normal;
+  }
+}
+
+/* 矮窗口（1366×768 这类笔记本扣掉浏览器工具栏）：徽标和留白整体缩一档，
+   保证「头部 + 文案 + 内容区」仍然一屏装得下 */
+@media (max-height: 640px) {
+  .about-emblem {
+    --emblem-size: clamp(52px, 4.4vw, 68px);
+  }
+
+  .about-body {
+    padding-top: 16px;
+    padding-bottom: 20px;
+    gap: 14px;
+  }
 }

@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ApiService from '../../services/api';
 import SystemUpdateCard from './SystemUpdateCard';
+import { applyTheme, resolveInitialTheme } from '../../theme';
 
-import { Moon, Sun, Lock, Shield } from 'lucide-react';
+import { Moon, Sun, Lock, Shield, Info, ChevronRight } from 'lucide-react';
 
 const SettingsView = () => {
+    const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user_info') || '{}');
     const isPrivileged = user.role === 'teacher' || user.role === 'president';
 
-    // Initialize state from local storage or system preference
-    const [darkMode, setDarkMode] = useState(() => {
-        return localStorage.getItem('theme') === 'dark' ||
-            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    });
+    // 初始主题：上次的选择优先，否则跟随系统
+    const [darkMode, setDarkMode] = useState(resolveInitialTheme);
 
     const [passwords, setPasswords] = useState({
         current: '',
@@ -42,15 +42,9 @@ const SettingsView = () => {
         }
     };
 
-    // Effect to apply theme instantly
+    // 切换后立刻生效，并记住选择（与其它页面共用 theme.js 里的同一套逻辑）
     useEffect(() => {
-        if (darkMode) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-            localStorage.setItem('theme', 'dark');
-        } else {
-            document.documentElement.removeAttribute('data-theme');
-            localStorage.setItem('theme', 'light');
-        }
+        applyTheme(darkMode);
     }, [darkMode]);
 
     // Inline Styles
@@ -95,6 +89,23 @@ const SettingsView = () => {
             cursor: 'pointer',
             fontWeight: 500,
             fontSize: '0.875rem',
+            transition: 'all 0.2s'
+        },
+        aboutButton: {
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            padding: '0.75rem 1rem',
+            borderRadius: '0.5rem',
+            backgroundColor: 'var(--bg-hover)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-color)',
+            cursor: 'pointer',
+            fontWeight: 500,
+            fontSize: '0.9rem',
+            fontFamily: 'inherit',
             transition: 'all 0.2s'
         }
     };
@@ -167,6 +178,22 @@ const SettingsView = () => {
                         </button>
                     </div>
                 </div>
+            </div>
+
+            <div style={styles.card}>
+                <h3 style={styles.title}>
+                    <Info size={20} className="text-indigo-600" style={{ color: 'var(--primary-color)' }} />
+                    关于
+                </h3>
+                <button
+                    type="button"
+                    style={styles.aboutButton}
+                    className="hover:opacity-90 active:scale-[0.99]"
+                    onClick={() => navigate('/about', { state: { fromTab: 'settings' } })}
+                >
+                    <span>关于这个系统</span>
+                    <ChevronRight size={18} />
+                </button>
             </div>
 
             {isPrivileged && <SystemUpdateCard />}

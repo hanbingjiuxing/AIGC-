@@ -19,10 +19,25 @@ backend/backup/
 frontend/node_modules/
 frontend/dist/
 
+# 运行时（setup_env.bat 自动获取的 Python / Node.js，属机器本地文件，不入库；
+# 若要随发布包分发离线运行时，用 git add -f runtime/python 强制入库）
+runtime/
+
+# 发布包构建产物（scripts/build_release.py）
+build/
+
 # 本地配置与密钥
 .env
 .env.local
 *.local.json
+
+# 资源保险箱（scripts/asset_vault.py）：密文在 assets/encrypted/，密钥永不入库
+data/secrets/
+*.vault-key
+
+# GraphFlow 插件的本地产物（知识图谱与观测缓存，不属于系统本身）
+.graphflow/
+graphflow-out/
 
 # 编辑器 / 系统
 .idea/

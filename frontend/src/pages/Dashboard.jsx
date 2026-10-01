@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { User, Image, Settings, LogOut, LayoutDashboard, Users, CalendarCheck } from 'lucide-react';
 import ProfileView from '../components/dashboard/ProfileView';
 import WorksView from '../components/dashboard/WorksView';
@@ -9,7 +9,11 @@ import AttendanceView from '../components/dashboard/AttendanceView';
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('profile');
+    const location = useLocation();
+    // 从 /about 返回时可以指定落回哪一栏（默认个人信息）
+    const [activeTab, setActiveTab] = useState(
+        (location.state && location.state.tab) || 'profile'
+    );
     const user = JSON.parse(localStorage.getItem('user_info') || '{}');
     const isPrivileged = user.role === 'teacher' || user.role === 'president';
 

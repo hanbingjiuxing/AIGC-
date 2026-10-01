@@ -278,15 +278,27 @@ GitHub 新版 API 会在资产上返回 `digest` 字段（`sha256:...`），系�
 1. 修改 `backend/version.json` 中的 `version`（如 `1.1.1`）
 2. 提交并推送到 GitHub
 3. 打标签：`git tag v1.1.1 && git push origin v1.1.1`
-4. 打包 ZIP 并在 GitHub 创建同名 Release，把 ZIP 作为资产上传
-5. 客户端即可通过「系统设置 → 系统更新」或启动检查获知新版本
+4. 打包：`python scripts/build_release.py`
+   —— 产物 `build/releases/AIGC_v<版本>.zip`，同时打印体积、条目数与 SHA-256
+5. 在 GitHub 创建同名 Release，把该 ZIP 作为资产上传
+6. 客户端即可通过「系统设置 → 系统更新」或启动检查获知新版本
 
-**打包要求**：
+**打包要求**（`scripts/build_release.py` 已自动满足，下面是它遵守的规则）：
 
 - ZIP 必须是**项目根结构**（顶层包含 `backend/`、`frontend/` 等）
-- 可以带一层包裹目录（如 GitHub 的 `AIGC--main/`），系统会自动剥离
+- 可以带一层包裹目录（脚本会套上 `AIGC社信息系统/`，系统会自动剥离）
 - **不要**打包 `frontend/node_modules/`、`data/`、`.git/`
-  —— 它们会被跳过或保护，但会让更新包从几百 KB 膨胀到几十 MB
+  —— 它们会被跳过或保护，但会让更新包从几百 KB 膨胀到几十 MB。
+  首次发布的 v2.0.0 包有 48 MB，其中 45 MB 是 `node_modules`、约 2 MB 是 `.git`；
+  同样内容改成干净包后只有 **334 KB**（79 个文件）
+
+> 脚本默认用 `git archive HEAD` 打包**已提交**的内容，保证发布包与标签一一对应；
+> 工作区有未提交改动时会提示但不影响打包。只想本地试包时加 `--worktree`。
+
+**发布前自检**（都不写盘）：
+
+    python scripts/build_release.py --list                         # 打包 + 打印文件清单
+    tools\offline_updater.exe --dry-run --zip <包> --project .      # 预演安装计划
 
 ## 8. 故障排查
 
