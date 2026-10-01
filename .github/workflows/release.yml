@@ -1,0 +1,77 @@
+name: Release
+
+# 发布更新包：改 backend/version.json 的版本号并推送到 main，就自动
+# 打包 + 创建同名标签 + 建 GitHub Release（zip 作为资产）。
+# 系统更新模块的「GitHub Release 回退」通道就是靠这个 zip。
+#
+# 只想手动跑一次：Actions → Release → Run workflow。
+#
+# 说明：本工作流只用仓库自带的 GITHUB_TOKEN（下面 permissions 里明确给了
+# contents: write），不需要任何个人访问令牌。已有同名 Release 时会自动跳过，
+# 所以重复推送不会重复发版。
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # 版本号一改就发版；工作流自身改动也跑一次（用于首次引导）
+      - 'backend/version.json'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出（含标签与完整历史）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 读取版本号并确定标签
+        id: meta
+        run: |
+          set -euo pipefail
+          VERSION=$(python3 -c "import json;print(json.load(open('backend/version.json'))['version'])")
+          # 标签不存在时由 gh release create 自动在默认分支上补建
+          TAG="v${VERSION}"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            REV="${TAG}"
+          else
+            REV="HEAD"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "rev=${REV}" >> "$GITHUB_OUTPUT"
+          echo "版本 ${VERSION} / 标签 ${TAG} / 打包自 ${REV}"
+
+      - name: 已有同名 Release 就跳过
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ steps.meta.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=1" >> "$GITHUB_OUTPUT"
+            echo "Release ${{ steps.meta.outputs.tag }} 已存在，跳过。"
+          else
+            echo "exists=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 打包（与标签一一对应的干净包）
+        if: steps.gate.outputs.exists == '0'
+        run: python3 scripts/build_release.py --rev "${{ steps.meta.outputs.rev }}" --out dist
+
+      - name: 创建 Release 并上传 zip
+        if: steps.gate.outputs.exists == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          NOTES=$(python3 -c "import json;print(json.load(open('backend/version.json'))['release_notes'])")
+          gh release create "${{ steps.meta.outputs.tag }}" dist/*.zip \
+            --title "${{ steps.meta.outputs.version }}" \
+            --notes "${NOTES}"
