@@ -275,13 +275,24 @@ GitHub 新版 API 会在资产上返回 `digest` 字段（`sha256:...`），系�
 
 ## 7. 维护者：发布新版本
 
-1. 修改 `backend/version.json` 中的 `version`（如 `1.1.1`）
-2. 提交并推送到 GitHub
-3. 打标签：`git tag v1.1.1 && git push origin v1.1.1`
-4. 打包：`python scripts/build_release.py`
+推送到 `main` 后**自动发布**（`.github/workflows/release.yml`）：只要
+`backend/version.json` 的 `version` 变了，Actions 就会用 `git archive` 打干净包、
+补建同名标签（如 `v1.1.1`）、创建 GitHub Release，并把 zip 作为资产上传；
+已有同名 Release 时自动跳过，重复推送不会重复发版。用的是仓库自带的
+`GITHUB_TOKEN`（工作流里显式声明 `contents: write`），不需要任何个人访问令牌。
+
+1. 修改 `backend/version.json` 的 `version`（如 `1.1.1`）与 `release_notes`
+2. 提交并推送到 GitHub —— 剩下的交给 Actions
+3. 客户端即可通过「系统设置 → 系统更新」或启动检查获知新版本
+
+> 也可以在 Actions 页手动触发：Actions → Release → Run workflow。
+
+**手工发布**（没有 Actions 或想自己控制时）：
+
+1. 打标签：`git tag v1.1.1 && git push origin v1.1.1`
+2. 打包：`python scripts/build_release.py --rev v1.1.1`
    —— 产物 `build/releases/AIGC_v<版本>.zip`，同时打印体积、条目数与 SHA-256
-5. 在 GitHub 创建同名 Release，把该 ZIP 作为资产上传
-6. 客户端即可通过「系统设置 → 系统更新」或启动检查获知新版本
+3. 在 GitHub 创建同名 Release，把该 ZIP 作为资产上传
 
 **打包要求**（`scripts/build_release.py` 已自动满足，下面是它遵守的规则）：
 
