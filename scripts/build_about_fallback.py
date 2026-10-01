@@ -544,7 +544,8 @@ def main() -> int:
         if not out_path.is_file():
             print(f"[FAIL] {out_path} 不存在，请先运行：python scripts/build_about_fallback.py")
             return 1
-        if out_path.read_text(encoding="utf-8") != page:
+        # 容忍行尾差异：git 的 autocrlf 会把检出转成 CRLF，那不代表内容过期
+        if out_path.read_text(encoding="utf-8").replace("\r\n", "\n") != page:
             print(f"[FAIL] {out_path} 已过期：与 About.jsx / index.css 重新生成的结果不一致。")
             print("       请运行：python scripts/build_about_fallback.py")
             return 1

@@ -1,0 +1,6 @@
+# 生成物：始终以 LF 存储与导出。
+# fallback/about.html 是 scripts/build_about_fallback.py 逐字节生成的产物；
+# core.autocrlf=true 会在 checkout / git archive 时把它转成 CRLF，
+# 于是 build_about_fallback.py --check 会在 Windows 检出上误报"已过期"，
+# 发布包里的那一份也与仓库内容对不上。
+fallback/about.html text eol=lf
